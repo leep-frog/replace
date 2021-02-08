@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -16,11 +17,10 @@ const (
 	fileArg        = "FILE"
 )
 
-var (
-	osStat = os.Stat
-)
-
-type Replace struct{}
+type Replace struct {
+	// Used for testing.
+	baseDirectory string
+}
 
 func (*Replace) Load(jsn string) error    { return nil }
 func (*Replace) Changed() bool            { return false }
@@ -32,11 +32,18 @@ func (*Replace) Alias() string {
 	return "r"
 }
 
-func (*Replace) replace(cos commands.CommandOS, rx *regexp.Regexp, rp, filename string) error {
-	fi, err := os.Stat(filename)
-	if err != nil {
-		return fmt.Errorf("failed to check file: %v", err)
+func (r *Replace) replace(cos commands.CommandOS, rx *regexp.Regexp, rp, shortFile string) error {
+	filename := shortFile
+	if r.baseDirectory != "" {
+		filename = filepath.Join(r.baseDirectory, filename)
 	}
+	fi, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return fmt.Errorf("file %q does not exist", shortFile)
+	} else if err != nil {
+		return fmt.Errorf("unknown error when fetching file %q: %v", shortFile, err)
+	}
+
 	input, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return fmt.Errorf("error reading file: %v", err)
@@ -44,16 +51,17 @@ func (*Replace) replace(cos commands.CommandOS, rx *regexp.Regexp, rp, filename 
 	lines := strings.Split(string(input), "\n")
 
 	for i, line := range lines {
+		fmt.Println("line", line, rp)
 		lines[i] = rx.ReplaceAllString(line, rp)
 		if line != lines[i] {
-			cos.Stdout("Replacement made:")
+			cos.Stdout("Replacement made in %q:", shortFile)
 			cos.Stdout("  " + line)
 			cos.Stdout("  " + lines[i])
 		}
 	}
 
 	output := strings.Join(lines, "\n")
-	err = ioutil.WriteFile("myfile", []byte(output), fi.Mode())
+	err = ioutil.WriteFile(filename, []byte(output), fi.Mode())
 	if err != nil {
 		return fmt.Errorf("error writing file: %v", err)
 	}
@@ -73,8 +81,7 @@ func (r *Replace) Replace(cos commands.CommandOS, args, flags map[string]*comman
 	ok := true
 	for _, filename := range filenames {
 		if err := r.replace(cos, rx, rp, filename); err != nil {
-			cos.Stdout("%s:", filename)
-			cos.Stderr("error while processing %q", filename)
+			cos.Stderr("error while processing %q: %v", filename, err)
 			ok = false
 		}
 	}
@@ -90,8 +97,8 @@ func (r *Replace) Command() commands.Command {
 	return &commands.TerminusCommand{
 		Executor: r.Replace,
 		Args: []commands.Arg{
-			commands.StringArg(regexpArg, false, nil),
-			commands.StringArg(replacementArg, false, nil),
+			commands.StringArg(regexpArg, true, nil),
+			commands.StringArg(replacementArg, true, nil),
 			commands.StringListArg(fileArg, 1, commands.UnboundedList, cmp),
 		},
 	}
