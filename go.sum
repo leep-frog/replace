@@ -1,0 +1,4 @@
+github.com/google/go-cmp v0.5.2/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
+github.com/leep-frog/commands v1.1.0 h1:pcBPlDPvPAJ8pYkDsAdfDEz7H9HomcqX6qc5vUWY25Y=
+github.com/leep-frog/commands v1.1.0/go.mod h1:JiPTp+skgvKR98FS3nl6mdtzA2pB6BEFra2YR7XkMKA=
+golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
