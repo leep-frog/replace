@@ -10,29 +10,6 @@ import (
 	"github.com/leep-frog/commands/commands"
 )
 
-/*var (
-
-)
-
-func setup(t *testing.T, filenames []string) {
-	t.Helper()
-
-	for _, f := range filenames {
-		input, err := ioutil.ReadFile(sourceFile)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-
-		err = ioutil.WriteFile(destinationFile, input, 0644)
-		if err != nil {
-			fmt.Println("Error creating", destinationFile)
-			fmt.Println(err)
-			return
-		}
-	}
-}*/
-
 func TestLoad(t *testing.T) {
 	for _, test := range []struct {
 		name string

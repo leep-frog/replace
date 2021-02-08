@@ -51,7 +51,6 @@ func (r *Replace) replace(cos commands.CommandOS, rx *regexp.Regexp, rp, shortFi
 	lines := strings.Split(string(input), "\n")
 
 	for i, line := range lines {
-		fmt.Println("line", line, rp)
 		lines[i] = rx.ReplaceAllString(line, rp)
 		if line != lines[i] {
 			cos.Stdout("Replacement made in %q:", shortFile)
