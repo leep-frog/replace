@@ -69,13 +69,13 @@ func (r *Replace) replace(cos commands.CommandOS, rx *regexp.Regexp, rp, shortFi
 }
 
 func (r *Replace) Replace(cos commands.CommandOS, args, flags map[string]*commands.Value, _ *commands.OptionInfo) (*commands.ExecutorResponse, bool) {
-	rx, err := regexp.Compile(args[regexpArg].GetString_())
+	rx, err := regexp.Compile(args[regexpArg].String())
 	if err != nil {
 		cos.Stderr("invalid regex: %v", err)
 		return nil, false
 	}
-	rp := args[replacementArg].GetString_()
-	filenames := args[fileArg].GetStringList().GetList()
+	rp := args[replacementArg].String()
+	filenames := args[fileArg].StringList()
 
 	ok := true
 	for _, filename := range filenames {
