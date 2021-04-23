@@ -1,13 +1,14 @@
 package replace
 
 import (
+	"fmt"
 	"io/ioutil"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/leep-frog/commands/commands"
+	"github.com/leep-frog/command"
 )
 
 func TestLoad(t *testing.T) {
@@ -41,16 +42,21 @@ func TestRecursiveGrep(t *testing.T) {
 		name       string
 		args       []string
 		files      map[string][]string
-		wantResp   *commands.ExecutorResponse
-		wantOK     bool
+		wantResp   *command.ExecuteData
+		wantErr    error
+		wantData   *command.Data
 		wantStdout []string
 		wantStderr []string
 		wantFiles  map[string][]string
 	}{
 		{
-			name: "requires regexp",
-			wantStderr: []string{
-				`no argument provided for "REGEXP"`,
+			name:       "requires regexp",
+			wantStderr: []string{"not enough arguments"},
+			wantErr:    fmt.Errorf("not enough arguments"),
+			wantData: &command.Data{
+				Values: map[string]*command.Value{
+					regexpArg: command.StringValue(""),
+				},
 			},
 		},
 		{
@@ -58,8 +64,13 @@ func TestRecursiveGrep(t *testing.T) {
 			args: []string{
 				"abc",
 			},
-			wantStderr: []string{
-				`no argument provided for "REPLACEMENT"`,
+			wantStderr: []string{"not enough arguments"},
+			wantErr:    fmt.Errorf("not enough arguments"),
+			wantData: &command.Data{
+				Values: map[string]*command.Value{
+					regexpArg:      command.StringValue("abc"),
+					replacementArg: command.StringValue(""),
+				},
 			},
 		},
 		{
@@ -68,8 +79,14 @@ func TestRecursiveGrep(t *testing.T) {
 				"abc",
 				"ABC",
 			},
-			wantStderr: []string{
-				`no argument provided for "FILE"`,
+			wantStderr: []string{"not enough arguments"},
+			wantErr:    fmt.Errorf("not enough arguments"),
+			wantData: &command.Data{
+				Values: map[string]*command.Value{
+					regexpArg:      command.StringValue("abc"),
+					replacementArg: command.StringValue("ABC"),
+					fileArg:        command.StringListValue(),
+				},
 			},
 		},
 		{
@@ -82,6 +99,14 @@ func TestRecursiveGrep(t *testing.T) {
 			wantStderr: []string{
 				"invalid regex: error parsing regexp: invalid character class range: `a-1`",
 			},
+			wantErr: fmt.Errorf("invalid regex: error parsing regexp: invalid character class range: `a-1`"),
+			wantData: &command.Data{
+				Values: map[string]*command.Value{
+					regexpArg:      command.StringValue("[a-1]"),
+					replacementArg: command.StringValue("ABC"),
+					fileArg:        command.StringListValue("one.txt"),
+				},
+			},
 		},
 		{
 			name: "fails if file does not exist",
@@ -92,6 +117,14 @@ func TestRecursiveGrep(t *testing.T) {
 			},
 			wantStderr: []string{
 				`error while processing "one.txt": file "one.txt" does not exist`,
+			},
+			wantErr: fmt.Errorf(`error while processing "one.txt": file "one.txt" does not exist`),
+			wantData: &command.Data{
+				Values: map[string]*command.Value{
+					regexpArg:      command.StringValue("abc"),
+					replacementArg: command.StringValue("ABC"),
+					fileArg:        command.StringListValue("one.txt"),
+				},
 			},
 		},
 		{
@@ -106,7 +139,13 @@ func TestRecursiveGrep(t *testing.T) {
 					"",
 				},
 			},
-			wantOK: true,
+			wantData: &command.Data{
+				Values: map[string]*command.Value{
+					regexpArg:      command.StringValue("abc"),
+					replacementArg: command.StringValue("ABC"),
+					fileArg:        command.StringListValue("one.txt"),
+				},
+			},
 		},
 		{
 			name: "makes a replacement",
@@ -125,11 +164,17 @@ func TestRecursiveGrep(t *testing.T) {
 					"123 ABC DEF",
 				},
 			},
-			wantOK: true,
 			wantStdout: []string{
 				`Replacement made in "one.txt":`,
 				"  123 abc DEF",
 				"  123 ABC DEF",
+			},
+			wantData: &command.Data{
+				Values: map[string]*command.Value{
+					regexpArg:      command.StringValue("abc"),
+					replacementArg: command.StringValue("ABC"),
+					fileArg:        command.StringListValue("one.txt"),
+				},
 			},
 		},
 		{
@@ -169,7 +214,6 @@ func TestRecursiveGrep(t *testing.T) {
 					"  T x T x T ",
 				},
 			},
-			wantOK: true,
 			wantStdout: []string{
 				`Replacement made in "one.txt":`,
 				"  ToT",
@@ -180,6 +224,13 @@ func TestRecursiveGrep(t *testing.T) {
 				`Replacement made in "three.txt":`,
 				"    T x T ",
 				"    T x T x T ",
+			},
+			wantData: &command.Data{
+				Values: map[string]*command.Value{
+					regexpArg:      command.StringValue("T(.*)T"),
+					replacementArg: command.StringValue("T${1}T${1}T"),
+					fileArg:        command.StringListValue("one.txt", "two.txt", "three.txt"),
+				},
 			},
 		},
 	} {
@@ -196,25 +247,10 @@ func TestRecursiveGrep(t *testing.T) {
 				}
 			}
 
-			tcos := &commands.TestCommandOS{}
 			r := &Replace{
 				baseDirectory: dir,
 			}
-			got, ok := commands.Execute(tcos, r.Command(), test.args, nil)
-			if ok != test.wantOK {
-				t.Fatalf("Replace: commands.Execute(%v) returned %v for ok; want %v", test.args, ok, test.wantOK)
-			}
-			if diff := cmp.Diff(test.wantResp, got); diff != "" {
-				t.Fatalf("Replace: Execute(%v) produced response diff (-want, +got):\n%s", test.args, diff)
-			}
-
-			if diff := cmp.Diff(test.wantStdout, tcos.GetStdout()); diff != "" {
-				t.Errorf("Replace: command.Execute(%v) produced stdout diff (-want, +got):\n%s", test.args, diff)
-			}
-			if diff := cmp.Diff(test.wantStderr, tcos.GetStderr()); diff != "" {
-				t.Errorf("Replace: command.Execute(%v) produced stderr diff (-want, +got):\n%s", test.args, diff)
-			}
-
+			command.ExecuteTest(t, r.Node(), test.args, test.wantErr, test.wantResp, test.wantData, test.wantStdout, test.wantStderr)
 			if r.Changed() {
 				t.Errorf("Replace: command.Execute(%v) set changed to true, but should be false", test.args)
 			}

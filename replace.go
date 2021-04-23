@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/leep-frog/commands/commands"
+	"github.com/leep-frog/command"
 )
 
 const (
@@ -22,9 +22,8 @@ type Replace struct {
 	baseDirectory string
 }
 
-func (*Replace) Load(jsn string) error    { return nil }
-func (*Replace) Changed() bool            { return false }
-func (*Replace) Option() *commands.Option { return nil }
+func (*Replace) Load(jsn string) error { return nil }
+func (*Replace) Changed() bool         { return false }
 func (*Replace) Name() string {
 	return "replace"
 }
@@ -32,7 +31,7 @@ func (*Replace) Alias() string {
 	return "r"
 }
 
-func (r *Replace) replace(cos commands.CommandOS, rx *regexp.Regexp, rp, shortFile string) error {
+func (r *Replace) replace(output command.Output, rx *regexp.Regexp, rp, shortFile string) error {
 	filename := shortFile
 	if r.baseDirectory != "" {
 		filename = filepath.Join(r.baseDirectory, filename)
@@ -53,52 +52,48 @@ func (r *Replace) replace(cos commands.CommandOS, rx *regexp.Regexp, rp, shortFi
 	for i, line := range lines {
 		lines[i] = rx.ReplaceAllString(line, rp)
 		if line != lines[i] {
-			cos.Stdout("Replacement made in %q:", shortFile)
-			cos.Stdout("  " + line)
-			cos.Stdout("  " + lines[i])
+			output.Stdout("Replacement made in %q:", shortFile)
+			output.Stdout("  " + line)
+			output.Stdout("  " + lines[i])
 		}
 	}
 
-	output := strings.Join(lines, "\n")
-	err = ioutil.WriteFile(filename, []byte(output), fi.Mode())
-	if err != nil {
+	op := strings.Join(lines, "\n")
+	if err = ioutil.WriteFile(filename, []byte(op), fi.Mode()); err != nil {
 		return fmt.Errorf("error writing file: %v", err)
 	}
 
 	return nil
 }
 
-func (r *Replace) Replace(cos commands.CommandOS, args, flags map[string]*commands.Value, _ *commands.OptionInfo) (*commands.ExecutorResponse, bool) {
-	rx, err := regexp.Compile(args[regexpArg].String())
+func (r *Replace) Replace(output command.Output, data *command.Data) error {
+	rx, err := regexp.Compile(data.Values[regexpArg].String())
 	if err != nil {
-		cos.Stderr("invalid regex: %v", err)
-		return nil, false
+		return output.Stderr("invalid regex: %v", err)
 	}
-	rp := args[replacementArg].String()
-	filenames := args[fileArg].StringList()
+	rp := data.Values[replacementArg].String()
+	filenames := data.Values[fileArg].StringList()
 
-	ok := true
 	for _, filename := range filenames {
-		if err := r.replace(cos, rx, rp, filename); err != nil {
-			cos.Stderr("error while processing %q: %v", filename, err)
-			ok = false
+		if err = r.replace(output, rx, rp, filename); err != nil {
+			err = fmt.Errorf("error while processing %q: %v", filename, err)
+			output.Err(err)
 		}
 	}
-
-	return nil, ok
+	return err
 }
 
-func (r *Replace) Command() commands.Command {
-	cmp := &commands.Completor{
-		SuggestionFetcher: &commands.FileFetcher{},
-	}
-
-	return &commands.TerminusCommand{
-		Executor: r.Replace,
-		Args: []commands.Arg{
-			commands.StringArg(regexpArg, true, nil),
-			commands.StringArg(replacementArg, true, nil),
-			commands.StringListArg(fileArg, 1, commands.UnboundedList, cmp),
+func (r *Replace) Node() *command.Node {
+	ao := &command.ArgOpt{
+		Completor: &command.Completor{
+			SuggestionFetcher: &command.FileFetcher{},
 		},
 	}
+
+	return command.SerialNodes(
+		command.StringNode(regexpArg, nil),
+		command.StringNode(replacementArg, nil),
+		command.StringListNode(fileArg, 1, command.UnboundedList, ao),
+		command.ExecutorNode(r.Replace),
+	)
 }
