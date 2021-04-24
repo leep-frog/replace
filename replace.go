@@ -17,6 +17,10 @@ const (
 	fileArg        = "FILE"
 )
 
+func CLI() *Replace {
+	return &Replace{}
+}
+
 type Replace struct {
 	// Used for testing.
 	baseDirectory string

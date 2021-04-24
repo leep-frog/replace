@@ -37,7 +37,7 @@ func TestLoad(t *testing.T) {
 	}
 }
 
-func TestRecursiveGrep(t *testing.T) {
+func TestRecursive(t *testing.T) {
 	for _, test := range []struct {
 		name       string
 		args       []string
