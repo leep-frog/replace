@@ -24,6 +24,7 @@ type Replace struct {
 
 func (*Replace) Load(jsn string) error { return nil }
 func (*Replace) Changed() bool         { return false }
+func (*Replace) Setup() []string       { return nil }
 func (*Replace) Name() string {
 	return "replace"
 }
