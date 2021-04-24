@@ -278,13 +278,8 @@ func TestRecursiveGrep(t *testing.T) {
 func TestMetadata(t *testing.T) {
 	r := &Replace{}
 
-	wantName := "replace"
+	wantName := "r"
 	if got := r.Name(); got != wantName {
 		t.Fatalf("Name() returned %q; want %q", got, wantName)
-	}
-
-	wantAlias := "r"
-	if got := r.Alias(); got != wantAlias {
-		t.Fatalf("Alias() returned %q; want %q", got, wantAlias)
 	}
 }
