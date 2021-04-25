@@ -53,11 +53,6 @@ func TestRecursive(t *testing.T) {
 			name:       "requires regexp",
 			wantStderr: []string{"not enough arguments"},
 			wantErr:    fmt.Errorf("not enough arguments"),
-			wantData: &command.Data{
-				Values: map[string]*command.Value{
-					regexpArg: command.StringValue(""),
-				},
-			},
 		},
 		{
 			name: "requires replacement",
@@ -68,8 +63,7 @@ func TestRecursive(t *testing.T) {
 			wantErr:    fmt.Errorf("not enough arguments"),
 			wantData: &command.Data{
 				Values: map[string]*command.Value{
-					regexpArg:      command.StringValue("abc"),
-					replacementArg: command.StringValue(""),
+					regexpArg: command.StringValue("abc"),
 				},
 			},
 		},
@@ -85,7 +79,6 @@ func TestRecursive(t *testing.T) {
 				Values: map[string]*command.Value{
 					regexpArg:      command.StringValue("abc"),
 					replacementArg: command.StringValue("ABC"),
-					fileArg:        command.StringListValue(),
 				},
 			},
 		},
