@@ -256,9 +256,7 @@ func TestRecursive(t *testing.T) {
 			}
 			test.etc.Node = r.Node()
 			command.ExecuteTest(t, test.etc, nil)
-			if r.Changed() {
-				t.Errorf("Replace: command.Execute(%v) set changed to true, but should be false", test.etc.Args)
-			}
+			command.ChangeTest(t, nil, r)
 
 			for f, originalContents := range test.files {
 				wantContents, ok := test.wantFiles[f]
