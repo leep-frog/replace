@@ -69,12 +69,12 @@ func (r *Replace) replace(output command.Output, rx *regexp.Regexp, rp, shortFil
 }
 
 func (r *Replace) Replace(output command.Output, data *command.Data) error {
-	rx, err := regexp.Compile(data.Values[regexpArg].String())
+	rx, err := regexp.Compile(data.String(regexpArg))
 	if err != nil {
 		return output.Stderr("invalid regex: %v", err)
 	}
-	rp := data.Values[replacementArg].String()
-	filenames := data.Values[fileArg].StringList()
+	rp := data.String(replacementArg)
+	filenames := data.StringList(fileArg)
 
 	for _, filename := range filenames {
 		if err = r.replace(output, rx, rp, filename); err != nil {

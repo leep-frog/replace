@@ -60,9 +60,7 @@ func TestRecursive(t *testing.T) {
 				WantStderr: []string{"not enough arguments"},
 				WantErr:    fmt.Errorf("not enough arguments"),
 				WantData: &command.Data{
-					Values: map[string]*command.Value{
-						regexpArg: command.StringValue("abc"),
-					},
+					regexpArg: command.StringValue("abc"),
 				},
 			},
 		},
@@ -76,10 +74,8 @@ func TestRecursive(t *testing.T) {
 				WantStderr: []string{"not enough arguments"},
 				WantErr:    fmt.Errorf("not enough arguments"),
 				WantData: &command.Data{
-					Values: map[string]*command.Value{
-						regexpArg:      command.StringValue("abc"),
-						replacementArg: command.StringValue("ABC"),
-					},
+					regexpArg:      command.StringValue("abc"),
+					replacementArg: command.StringValue("ABC"),
 				},
 			},
 		},
@@ -96,11 +92,9 @@ func TestRecursive(t *testing.T) {
 				},
 				WantErr: fmt.Errorf("invalid regex: error parsing regexp: invalid character class range: `a-1`"),
 				WantData: &command.Data{
-					Values: map[string]*command.Value{
-						regexpArg:      command.StringValue("[a-1]"),
-						replacementArg: command.StringValue("ABC"),
-						fileArg:        command.StringListValue("one.txt"),
-					},
+					regexpArg:      command.StringValue("[a-1]"),
+					replacementArg: command.StringValue("ABC"),
+					fileArg:        command.StringListValue("one.txt"),
 				},
 			},
 		},
@@ -117,11 +111,9 @@ func TestRecursive(t *testing.T) {
 				},
 				WantErr: fmt.Errorf(`error while processing "one.txt": file "one.txt" does not exist`),
 				WantData: &command.Data{
-					Values: map[string]*command.Value{
-						regexpArg:      command.StringValue("abc"),
-						replacementArg: command.StringValue("ABC"),
-						fileArg:        command.StringListValue("one.txt"),
-					},
+					regexpArg:      command.StringValue("abc"),
+					replacementArg: command.StringValue("ABC"),
+					fileArg:        command.StringListValue("one.txt"),
 				},
 			},
 		},
@@ -139,11 +131,9 @@ func TestRecursive(t *testing.T) {
 					"one.txt",
 				},
 				WantData: &command.Data{
-					Values: map[string]*command.Value{
-						regexpArg:      command.StringValue("abc"),
-						replacementArg: command.StringValue("ABC"),
-						fileArg:        command.StringListValue("one.txt"),
-					},
+					regexpArg:      command.StringValue("abc"),
+					replacementArg: command.StringValue("ABC"),
+					fileArg:        command.StringListValue("one.txt"),
 				},
 			},
 		},
@@ -171,11 +161,9 @@ func TestRecursive(t *testing.T) {
 					"  123 ABC DEF",
 				},
 				WantData: &command.Data{
-					Values: map[string]*command.Value{
-						regexpArg:      command.StringValue("abc"),
-						replacementArg: command.StringValue("ABC"),
-						fileArg:        command.StringListValue("one.txt"),
-					},
+					regexpArg:      command.StringValue("abc"),
+					replacementArg: command.StringValue("ABC"),
+					fileArg:        command.StringListValue("one.txt"),
 				},
 			},
 		},
@@ -229,11 +217,9 @@ func TestRecursive(t *testing.T) {
 					"    T x T x T ",
 				},
 				WantData: &command.Data{
-					Values: map[string]*command.Value{
-						regexpArg:      command.StringValue("T(.*)T"),
-						replacementArg: command.StringValue("T${1}T${1}T"),
-						fileArg:        command.StringListValue("one.txt", "two.txt", "three.txt"),
-					},
+					regexpArg:      command.StringValue("T(.*)T"),
+					replacementArg: command.StringValue("T${1}T${1}T"),
+					fileArg:        command.StringListValue("one.txt", "two.txt", "three.txt"),
 				},
 			},
 		},
