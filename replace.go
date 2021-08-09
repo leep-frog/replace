@@ -86,15 +86,13 @@ func (r *Replace) Replace(output command.Output, data *command.Data) error {
 }
 
 func (r *Replace) Node() *command.Node {
-	ao := &command.ArgOpt{
-		Completor: &command.Completor{
-			SuggestionFetcher: &command.FileFetcher{},
-		},
+	ao := &command.Completor{
+		SuggestionFetcher: &command.FileFetcher{},
 	}
 
 	return command.SerialNodes(
-		command.StringNode(regexpArg, nil),
-		command.StringNode(replacementArg, nil),
+		command.StringNode(regexpArg),
+		command.StringNode(replacementArg),
 		command.StringListNode(fileArg, 1, command.UnboundedList, ao),
 		command.ExecutorNode(r.Replace),
 	)
