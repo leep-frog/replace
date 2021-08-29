@@ -54,7 +54,7 @@ func (r *Replace) replace(output command.Output, rx *regexp.Regexp, rp, shortFil
 	for i, line := range lines {
 		lines[i] = rx.ReplaceAllString(line, rp)
 		if line != lines[i] {
-			output.Stdout("Replacement made in %q:", shortFile)
+			output.Stdoutf("Replacement made in %q:", shortFile)
 			output.Stdout("  " + line)
 			output.Stdout("  " + lines[i])
 		}
@@ -71,7 +71,7 @@ func (r *Replace) replace(output command.Output, rx *regexp.Regexp, rp, shortFil
 func (r *Replace) Replace(output command.Output, data *command.Data) error {
 	rx, err := regexp.Compile(data.String(regexpArg))
 	if err != nil {
-		return output.Stderr("invalid regex: %v", err)
+		return output.Stderrf("invalid regex: %v", err)
 	}
 	rp := data.String(replacementArg)
 	filenames := data.StringList(fileArg)
