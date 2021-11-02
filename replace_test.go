@@ -60,7 +60,7 @@ func TestRecursive(t *testing.T) {
 				WantStderr: []string{"not enough arguments"},
 				WantErr:    fmt.Errorf("not enough arguments"),
 				WantData: &command.Data{
-					regexpArg: command.StringValue("abc"),
+					regexpArg.Name(): command.StringValue("abc"),
 				},
 			},
 		},
@@ -74,8 +74,8 @@ func TestRecursive(t *testing.T) {
 				WantStderr: []string{"not enough arguments"},
 				WantErr:    fmt.Errorf("not enough arguments"),
 				WantData: &command.Data{
-					regexpArg:      command.StringValue("abc"),
-					replacementArg: command.StringValue("ABC"),
+					regexpArg.Name():      command.StringValue("abc"),
+					replacementArg.Name(): command.StringValue("ABC"),
 				},
 			},
 		},
@@ -92,9 +92,9 @@ func TestRecursive(t *testing.T) {
 				},
 				WantErr: fmt.Errorf("invalid regex: error parsing regexp: invalid character class range: `a-1`"),
 				WantData: &command.Data{
-					regexpArg:      command.StringValue("[a-1]"),
-					replacementArg: command.StringValue("ABC"),
-					fileArg:        command.StringListValue("one.txt"),
+					regexpArg.Name():      command.StringValue("[a-1]"),
+					replacementArg.Name(): command.StringValue("ABC"),
+					fileArg.Name():        command.StringListValue("one.txt"),
 				},
 			},
 		},
@@ -111,9 +111,9 @@ func TestRecursive(t *testing.T) {
 				},
 				WantErr: fmt.Errorf(`error while processing "one.txt": file "one.txt" does not exist`),
 				WantData: &command.Data{
-					regexpArg:      command.StringValue("abc"),
-					replacementArg: command.StringValue("ABC"),
-					fileArg:        command.StringListValue("one.txt"),
+					regexpArg.Name():      command.StringValue("abc"),
+					replacementArg.Name(): command.StringValue("ABC"),
+					fileArg.Name():        command.StringListValue("one.txt"),
 				},
 			},
 		},
@@ -131,9 +131,9 @@ func TestRecursive(t *testing.T) {
 					"one.txt",
 				},
 				WantData: &command.Data{
-					regexpArg:      command.StringValue("abc"),
-					replacementArg: command.StringValue("ABC"),
-					fileArg:        command.StringListValue("one.txt"),
+					regexpArg.Name():      command.StringValue("abc"),
+					replacementArg.Name(): command.StringValue("ABC"),
+					fileArg.Name():        command.StringListValue("one.txt"),
 				},
 			},
 		},
@@ -161,9 +161,9 @@ func TestRecursive(t *testing.T) {
 					"  123 ABC DEF",
 				},
 				WantData: &command.Data{
-					regexpArg:      command.StringValue("abc"),
-					replacementArg: command.StringValue("ABC"),
-					fileArg:        command.StringListValue("one.txt"),
+					regexpArg.Name():      command.StringValue("abc"),
+					replacementArg.Name(): command.StringValue("ABC"),
+					fileArg.Name():        command.StringListValue("one.txt"),
 				},
 			},
 		},
@@ -217,9 +217,9 @@ func TestRecursive(t *testing.T) {
 					"    T x T x T ",
 				},
 				WantData: &command.Data{
-					regexpArg:      command.StringValue("T(.*)T"),
-					replacementArg: command.StringValue("T${1}T${1}T"),
-					fileArg:        command.StringListValue("one.txt", "two.txt", "three.txt"),
+					regexpArg.Name():      command.StringValue("T(.*)T"),
+					replacementArg.Name(): command.StringValue("T${1}T${1}T"),
+					fileArg.Name():        command.StringListValue("one.txt", "two.txt", "three.txt"),
 				},
 			},
 		},
@@ -271,4 +271,19 @@ func TestMetadata(t *testing.T) {
 	if got := r.Name(); got != wantName {
 		t.Fatalf("Name() returned %q; want %q", got, wantName)
 	}
+}
+
+func TestUsage(t *testing.T) {
+	command.UsageTest(t, &command.UsageTestCase{
+		Node: CLI().Node(),
+		WantString: []string{
+			"Makes regex replacements in files",
+			"REGEXP REPLACEMENT FILE [ FILE ... ]",
+			"",
+			"Arguments:",
+			"  FILE: File in which replacements should be made",
+			"  REGEXP: Expression to replace",
+			"  REPLACEMENT: Replacement pattern",
+		},
+	})
 }

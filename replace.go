@@ -11,10 +11,10 @@ import (
 	"github.com/leep-frog/command"
 )
 
-const (
-	regexpArg      = "REGEXP"
-	replacementArg = "REPLACEMENT"
-	fileArg        = "FILE"
+var (
+	regexpArg      = command.StringNode("REGEXP", "Expression to replace")
+	replacementArg = command.StringNode("REPLACEMENT", "Replacement pattern")
+	fileArg        = command.FileListNode("FILE", "File in which replacements should be made", 1, command.UnboundedList)
 )
 
 func CLI() *Replace {
@@ -26,6 +26,8 @@ type Replace struct {
 	baseDirectory string
 }
 
+// TODO: make CLI a struct type instead and make all of these
+// fields in the struct.
 func (*Replace) Load(jsn string) error { return nil }
 func (*Replace) Changed() bool         { return false }
 func (*Replace) Setup() []string       { return nil }
@@ -69,12 +71,12 @@ func (r *Replace) replace(output command.Output, rx *regexp.Regexp, rp, shortFil
 }
 
 func (r *Replace) Replace(output command.Output, data *command.Data) error {
-	rx, err := regexp.Compile(data.String(regexpArg))
+	rx, err := regexp.Compile(data.String(regexpArg.Name()))
 	if err != nil {
 		return output.Stderrf("invalid regex: %v", err)
 	}
-	rp := data.String(replacementArg)
-	filenames := data.StringList(fileArg)
+	rp := data.String(replacementArg.Name())
+	filenames := data.StringList(fileArg.Name())
 
 	for _, filename := range filenames {
 		if err = r.replace(output, rx, rp, filename); err != nil {
@@ -86,14 +88,11 @@ func (r *Replace) Replace(output command.Output, data *command.Data) error {
 }
 
 func (r *Replace) Node() *command.Node {
-	ao := &command.Completor{
-		SuggestionFetcher: &command.FileFetcher{},
-	}
-
 	return command.SerialNodes(
-		command.StringNode(regexpArg),
-		command.StringNode(replacementArg),
-		command.StringListNode(fileArg, 1, command.UnboundedList, ao),
+		command.Description("Makes regex replacements in files"),
+		regexpArg,
+		replacementArg,
+		fileArg,
 		command.ExecutorNode(r.Replace),
 	)
 }
