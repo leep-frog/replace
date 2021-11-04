@@ -47,8 +47,8 @@ func TestRecursive(t *testing.T) {
 		{
 			name: "requires regexp",
 			etc: &command.ExecuteTestCase{
-				WantStderr: []string{"not enough arguments"},
-				WantErr:    fmt.Errorf("not enough arguments"),
+				WantStderr: []string{`Argument "REGEXP" requires at least 1 argument, got 0`},
+				WantErr:    fmt.Errorf(`Argument "REGEXP" requires at least 1 argument, got 0`),
 			},
 		},
 		{
@@ -57,8 +57,8 @@ func TestRecursive(t *testing.T) {
 				Args: []string{
 					"abc",
 				},
-				WantStderr: []string{"not enough arguments"},
-				WantErr:    fmt.Errorf("not enough arguments"),
+				WantStderr: []string{`Argument "REPLACEMENT" requires at least 1 argument, got 0`},
+				WantErr:    fmt.Errorf(`Argument "REPLACEMENT" requires at least 1 argument, got 0`),
 				WantData: &command.Data{
 					regexpArg.Name(): command.StringValue("abc"),
 				},
@@ -71,8 +71,8 @@ func TestRecursive(t *testing.T) {
 					"abc",
 					"ABC",
 				},
-				WantStderr: []string{"not enough arguments"},
-				WantErr:    fmt.Errorf("not enough arguments"),
+				WantStderr: []string{`Argument "FILE" requires at least 1 argument, got 0`},
+				WantErr:    fmt.Errorf(`Argument "FILE" requires at least 1 argument, got 0`),
 				WantData: &command.Data{
 					regexpArg.Name():      command.StringValue("abc"),
 					replacementArg.Name(): command.StringValue("ABC"),

@@ -26,8 +26,6 @@ type Replace struct {
 	baseDirectory string
 }
 
-// TODO: make CLI a struct type instead and make all of these
-// fields in the struct.
 func (*Replace) Load(jsn string) error { return nil }
 func (*Replace) Changed() bool         { return false }
 func (*Replace) Setup() []string       { return nil }
