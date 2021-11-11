@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -12,19 +11,16 @@ import (
 )
 
 var (
-	regexpArg      = command.StringNode("REGEXP", "Expression to replace")
+	regexpArg      = command.StringNode("REGEXP", "Expression to replace", command.IsRegex())
 	replacementArg = command.StringNode("REPLACEMENT", "Replacement pattern")
-	fileArg        = command.FileListNode("FILE", "File in which replacements should be made", 1, command.UnboundedList)
+	fileArg        = command.StringListNode("FILE", "File in which replacements should be made", 1, command.UnboundedList, command.AreFiles())
 )
 
 func CLI() *Replace {
 	return &Replace{}
 }
 
-type Replace struct {
-	// Used for testing.
-	baseDirectory string
-}
+type Replace struct{}
 
 func (*Replace) Load(jsn string) error { return nil }
 func (*Replace) Changed() bool         { return false }
@@ -33,16 +29,10 @@ func (*Replace) Name() string {
 	return "r"
 }
 
-func (r *Replace) replace(output command.Output, rx *regexp.Regexp, rp, shortFile string) error {
-	filename := shortFile
-	if r.baseDirectory != "" {
-		filename = filepath.Join(r.baseDirectory, filename)
-	}
+func (r *Replace) replace(output command.Output, rx *regexp.Regexp, rp, filename string) error {
 	fi, err := os.Stat(filename)
-	if os.IsNotExist(err) {
-		return fmt.Errorf("file %q does not exist", shortFile)
-	} else if err != nil {
-		return fmt.Errorf("unknown error when fetching file %q: %v", shortFile, err)
+	if err != nil {
+		return fmt.Errorf("unknown error when fetching file %q: %v", filename, err)
 	}
 
 	input, err := ioutil.ReadFile(filename)
@@ -54,7 +44,7 @@ func (r *Replace) replace(output command.Output, rx *regexp.Regexp, rp, shortFil
 	for i, line := range lines {
 		lines[i] = rx.ReplaceAllString(line, rp)
 		if line != lines[i] {
-			output.Stdoutf("Replacement made in %q:", shortFile)
+			output.Stdoutf("Replacement made in %q:", filename)
 			output.Stdout("  " + line)
 			output.Stdout("  " + lines[i])
 		}
@@ -69,13 +59,11 @@ func (r *Replace) replace(output command.Output, rx *regexp.Regexp, rp, shortFil
 }
 
 func (r *Replace) Replace(output command.Output, data *command.Data) error {
-	rx, err := regexp.Compile(data.String(regexpArg.Name()))
-	if err != nil {
-		return output.Stderrf("invalid regex: %v", err)
-	}
+	rx := data.Regexp(regexpArg.Name())
 	rp := data.String(replacementArg.Name())
 	filenames := data.StringList(fileArg.Name())
 
+	var err error
 	for _, filename := range filenames {
 		if err = r.replace(output, rx, rp, filename); err != nil {
 			err = fmt.Errorf("error while processing %q: %v", filename, err)

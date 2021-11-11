@@ -3,6 +3,7 @@ package replace
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -10,6 +11,14 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/leep-frog/command"
 )
+
+const (
+	testDir = "testing"
+)
+
+func td(fs string) string {
+	return filepath.Join(testDir, fs)
+}
 
 func TestLoad(t *testing.T) {
 	for _, test := range []struct {
@@ -37,7 +46,7 @@ func TestLoad(t *testing.T) {
 	}
 }
 
-func TestRecursive(t *testing.T) {
+func TestReplace(t *testing.T) {
 	for _, test := range []struct {
 		name      string
 		etc       *command.ExecuteTestCase
@@ -59,9 +68,9 @@ func TestRecursive(t *testing.T) {
 				},
 				WantStderr: []string{`Argument "REPLACEMENT" requires at least 1 argument, got 0`},
 				WantErr:    fmt.Errorf(`Argument "REPLACEMENT" requires at least 1 argument, got 0`),
-				WantData: &command.Data{
+				WantData: &command.Data{Values: map[string]*command.Value{
 					regexpArg.Name(): command.StringValue("abc"),
-				},
+				}},
 			},
 		},
 		{
@@ -73,10 +82,10 @@ func TestRecursive(t *testing.T) {
 				},
 				WantStderr: []string{`Argument "FILE" requires at least 1 argument, got 0`},
 				WantErr:    fmt.Errorf(`Argument "FILE" requires at least 1 argument, got 0`),
-				WantData: &command.Data{
+				WantData: &command.Data{Values: map[string]*command.Value{
 					regexpArg.Name():      command.StringValue("abc"),
 					replacementArg.Name(): command.StringValue("ABC"),
-				},
+				}},
 			},
 		},
 		{
@@ -85,17 +94,15 @@ func TestRecursive(t *testing.T) {
 				Args: []string{
 					"[a-1]",
 					"ABC",
-					"one.txt",
+					td("one.txt"),
 				},
 				WantStderr: []string{
-					"invalid regex: error parsing regexp: invalid character class range: `a-1`",
+					"validation failed: [IsRegex] value isn't a valid regex: error parsing regexp: invalid character class range: `a-1`",
 				},
-				WantErr: fmt.Errorf("invalid regex: error parsing regexp: invalid character class range: `a-1`"),
-				WantData: &command.Data{
-					regexpArg.Name():      command.StringValue("[a-1]"),
-					replacementArg.Name(): command.StringValue("ABC"),
-					fileArg.Name():        command.StringListValue("one.txt"),
-				},
+				WantErr: fmt.Errorf("validation failed: [IsRegex] value isn't a valid regex: error parsing regexp: invalid character class range: `a-1`"),
+				WantData: &command.Data{Values: map[string]*command.Value{
+					regexpArg.Name(): command.StringValue("[a-1]"),
+				}},
 			},
 		},
 		{
@@ -104,23 +111,23 @@ func TestRecursive(t *testing.T) {
 				Args: []string{
 					"abc",
 					"ABC",
-					"one.txt",
+					td("one.txt"),
 				},
 				WantStderr: []string{
-					`error while processing "one.txt": file "one.txt" does not exist`,
+					fmt.Sprintf(`validation failed: [AreFiles] file %q does not exist`, td("one.txt")),
 				},
-				WantErr: fmt.Errorf(`error while processing "one.txt": file "one.txt" does not exist`),
-				WantData: &command.Data{
+				WantErr: fmt.Errorf(`validation failed: [AreFiles] file %q does not exist`, td("one.txt")),
+				WantData: &command.Data{Values: map[string]*command.Value{
 					regexpArg.Name():      command.StringValue("abc"),
 					replacementArg.Name(): command.StringValue("ABC"),
-					fileArg.Name():        command.StringListValue("one.txt"),
-				},
+					fileArg.Name():        command.StringListValue(td("one.txt")),
+				}},
 			},
 		},
 		{
 			name: "makes no replacements",
 			files: map[string][]string{
-				"one.txt": {
+				td("one.txt"): {
 					"",
 				},
 			},
@@ -128,24 +135,24 @@ func TestRecursive(t *testing.T) {
 				Args: []string{
 					"abc",
 					"ABC",
-					"one.txt",
+					td("one.txt"),
 				},
-				WantData: &command.Data{
+				WantData: &command.Data{Values: map[string]*command.Value{
 					regexpArg.Name():      command.StringValue("abc"),
 					replacementArg.Name(): command.StringValue("ABC"),
-					fileArg.Name():        command.StringListValue("one.txt"),
-				},
+					fileArg.Name():        command.StringListValue(td("one.txt")),
+				}},
 			},
 		},
 		{
 			name: "makes a replacement",
 			files: map[string][]string{
-				"one.txt": {
+				td("one.txt"): {
 					"123 abc DEF",
 				},
 			},
 			wantFiles: map[string][]string{
-				"one.txt": {
+				td("one.txt"): {
 					"123 ABC DEF",
 				},
 			},
@@ -153,47 +160,47 @@ func TestRecursive(t *testing.T) {
 				Args: []string{
 					"abc",
 					"ABC",
-					"one.txt",
+					td("one.txt"),
 				},
 				WantStdout: []string{
-					`Replacement made in "one.txt":`,
+					fmt.Sprintf(`Replacement made in %q:`, td("one.txt")),
 					"  123 abc DEF",
 					"  123 ABC DEF",
 				},
-				WantData: &command.Data{
+				WantData: &command.Data{Values: map[string]*command.Value{
 					regexpArg.Name():      command.StringValue("abc"),
 					replacementArg.Name(): command.StringValue("ABC"),
-					fileArg.Name():        command.StringListValue("one.txt"),
-				},
+					fileArg.Name():        command.StringListValue(td("one.txt")),
+				}},
 			},
 		},
 		{
 			name: "makes a replacement in files with matches",
 			files: map[string][]string{
-				"one.txt": {
+				td("one.txt"): {
 					"ToT",
 					"Too cool",
 					"prefix text Thank you very much, Tony",
 				},
-				"two.txt": {
+				td("two.txt"): {
 					"nothing to see here",
 					"these are not the lines you are looking for",
 				},
-				"three.txt": {
+				td("three.txt"): {
 					"  T x T ",
 				},
 			},
 			wantFiles: map[string][]string{
-				"one.txt": {
+				td("one.txt"): {
 					"ToToT",
 					"Too cool",
 					"prefix text Thank you very much, Thank you very much, Tony",
 				},
-				"two.txt": {
+				td("two.txt"): {
 					"nothing to see here",
 					"these are not the lines you are looking for",
 				},
-				"three.txt": {
+				td("three.txt"): {
 					"  T x T x T ",
 				},
 			},
@@ -201,45 +208,43 @@ func TestRecursive(t *testing.T) {
 				Args: []string{
 					"T(.*)T",
 					"T${1}T${1}T",
-					"one.txt",
-					"two.txt",
-					"three.txt",
+					td("one.txt"),
+					td("two.txt"),
+					td("three.txt"),
 				},
 				WantStdout: []string{
-					`Replacement made in "one.txt":`,
+					fmt.Sprintf(`Replacement made in %q:`, td("one.txt")),
 					"  ToT",
 					"  ToToT",
-					`Replacement made in "one.txt":`,
+					fmt.Sprintf(`Replacement made in %q:`, td("one.txt")),
 					"  prefix text Thank you very much, Tony",
 					"  prefix text Thank you very much, Thank you very much, Tony",
-					`Replacement made in "three.txt":`,
+					fmt.Sprintf(`Replacement made in %q:`, td("three.txt")),
 					"    T x T ",
 					"    T x T x T ",
 				},
-				WantData: &command.Data{
+				WantData: &command.Data{Values: map[string]*command.Value{
 					regexpArg.Name():      command.StringValue("T(.*)T"),
 					replacementArg.Name(): command.StringValue("T${1}T${1}T"),
-					fileArg.Name():        command.StringListValue("one.txt", "two.txt", "three.txt"),
-				},
+					fileArg.Name():        command.StringListValue(td("one.txt"), td("two.txt"), td("three.txt")),
+				}},
 			},
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			dir, err := ioutil.TempDir("", "clis-replace-test")
-			if err != nil {
-				t.Fatalf("failed to create temporary directory: %v", err)
+			if err := os.Mkdir(testDir, 0644); err != nil {
+				t.Fatalf("failed to create test directory: %v", err)
 			}
+			defer os.RemoveAll(testDir)
 
 			for f, contents := range test.files {
 				data := []byte(strings.Join(contents, "\n"))
-				if err := ioutil.WriteFile(filepath.Join(dir, f), data, 0644); err != nil {
+				if err := ioutil.WriteFile(f, data, 0644); err != nil {
 					t.Fatalf("failed to write to file %q: %v", f, err)
 				}
 			}
 
-			r := &Replace{
-				baseDirectory: dir,
-			}
+			r := &Replace{}
 			test.etc.Node = r.Node()
 			command.ExecuteTest(t, test.etc)
 			command.ChangeTest(t, nil, r)
@@ -250,7 +255,7 @@ func TestRecursive(t *testing.T) {
 					wantContents = originalContents
 				}
 
-				gotBytes, err := ioutil.ReadFile(filepath.Join(dir, f))
+				gotBytes, err := ioutil.ReadFile(f)
 				if err != nil {
 					t.Fatalf("failed to fetch file contents: %v", err)
 				}
