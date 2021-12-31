@@ -79,6 +79,6 @@ func (r *Replace) Node() *command.Node {
 		regexpArg,
 		replacementArg,
 		fileArg,
-		command.ExecutorNode(r.Replace),
+		command.ExecuteErrNode(r.Replace),
 	)
 }
