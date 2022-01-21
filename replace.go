@@ -11,9 +11,9 @@ import (
 )
 
 var (
-	regexpArg      = command.StringNode("REGEXP", "Expression to replace", command.IsRegex())
-	replacementArg = command.StringNode("REPLACEMENT", "Replacement pattern")
-	fileArg        = command.StringListNode("FILE", "File in which replacements should be made", 1, command.UnboundedList, command.AreFiles())
+	regexpArg      = command.Arg[string]("REGEXP", "Expression to replace", command.IsRegex())
+	replacementArg = command.Arg[string]("REPLACEMENT", "Replacement pattern")
+	fileArg        = command.ListArg[string]("FILE", "File in which replacements should be made", 1, command.UnboundedList, command.ValidatorList(command.FileExists()))
 )
 
 func CLI() *Replace {

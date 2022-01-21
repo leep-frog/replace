@@ -68,8 +68,8 @@ func TestReplace(t *testing.T) {
 				},
 				WantStderr: []string{`Argument "REPLACEMENT" requires at least 1 argument, got 0`},
 				WantErr:    fmt.Errorf(`Argument "REPLACEMENT" requires at least 1 argument, got 0`),
-				WantData: &command.Data{Values: map[string]*command.Value{
-					regexpArg.Name(): command.StringValue("abc"),
+				WantData: &command.Data{Values: map[string]interface{}{
+					regexpArg.Name(): "abc",
 				}},
 			},
 		},
@@ -82,9 +82,9 @@ func TestReplace(t *testing.T) {
 				},
 				WantStderr: []string{`Argument "FILE" requires at least 1 argument, got 0`},
 				WantErr:    fmt.Errorf(`Argument "FILE" requires at least 1 argument, got 0`),
-				WantData: &command.Data{Values: map[string]*command.Value{
-					regexpArg.Name():      command.StringValue("abc"),
-					replacementArg.Name(): command.StringValue("ABC"),
+				WantData: &command.Data{Values: map[string]interface{}{
+					regexpArg.Name():      "abc",
+					replacementArg.Name(): "ABC",
 				}},
 			},
 		},
@@ -97,11 +97,11 @@ func TestReplace(t *testing.T) {
 					td("one.txt"),
 				},
 				WantStderr: []string{
-					"validation failed: [IsRegex] value isn't a valid regex: error parsing regexp: invalid character class range: `a-1`",
+					"validation failed: [IsRegex] value \"[a-1]\" isn't a valid regex: error parsing regexp: invalid character class range: `a-1`",
 				},
-				WantErr: fmt.Errorf("validation failed: [IsRegex] value isn't a valid regex: error parsing regexp: invalid character class range: `a-1`"),
-				WantData: &command.Data{Values: map[string]*command.Value{
-					regexpArg.Name(): command.StringValue("[a-1]"),
+				WantErr: fmt.Errorf("validation failed: [IsRegex] value \"[a-1]\" isn't a valid regex: error parsing regexp: invalid character class range: `a-1`"),
+				WantData: &command.Data{Values: map[string]interface{}{
+					regexpArg.Name(): "[a-1]",
 				}},
 			},
 		},
@@ -114,13 +114,13 @@ func TestReplace(t *testing.T) {
 					td("one.txt"),
 				},
 				WantStderr: []string{
-					fmt.Sprintf(`validation failed: [AreFiles] file %q does not exist`, td("one.txt")),
+					fmt.Sprintf(`validation failed: [FileExists] file %q does not exist`, td("one.txt")),
 				},
-				WantErr: fmt.Errorf(`validation failed: [AreFiles] file %q does not exist`, td("one.txt")),
-				WantData: &command.Data{Values: map[string]*command.Value{
-					regexpArg.Name():      command.StringValue("abc"),
-					replacementArg.Name(): command.StringValue("ABC"),
-					fileArg.Name():        command.StringListValue(td("one.txt")),
+				WantErr: fmt.Errorf(`validation failed: [FileExists] file %q does not exist`, td("one.txt")),
+				WantData: &command.Data{Values: map[string]interface{}{
+					regexpArg.Name():      "abc",
+					replacementArg.Name(): "ABC",
+					fileArg.Name():        []string{td("one.txt")},
 				}},
 			},
 		},
@@ -137,10 +137,10 @@ func TestReplace(t *testing.T) {
 					"ABC",
 					td("one.txt"),
 				},
-				WantData: &command.Data{Values: map[string]*command.Value{
-					regexpArg.Name():      command.StringValue("abc"),
-					replacementArg.Name(): command.StringValue("ABC"),
-					fileArg.Name():        command.StringListValue(td("one.txt")),
+				WantData: &command.Data{Values: map[string]interface{}{
+					regexpArg.Name():      "abc",
+					replacementArg.Name(): "ABC",
+					fileArg.Name():        []string{td("one.txt")},
 				}},
 			},
 		},
@@ -167,10 +167,10 @@ func TestReplace(t *testing.T) {
 					"  123 abc DEF",
 					"  123 ABC DEF",
 				},
-				WantData: &command.Data{Values: map[string]*command.Value{
-					regexpArg.Name():      command.StringValue("abc"),
-					replacementArg.Name(): command.StringValue("ABC"),
-					fileArg.Name():        command.StringListValue(td("one.txt")),
+				WantData: &command.Data{Values: map[string]interface{}{
+					regexpArg.Name():      "abc",
+					replacementArg.Name(): "ABC",
+					fileArg.Name():        []string{td("one.txt")},
 				}},
 			},
 		},
@@ -223,10 +223,10 @@ func TestReplace(t *testing.T) {
 					"    T x T ",
 					"    T x T x T ",
 				},
-				WantData: &command.Data{Values: map[string]*command.Value{
-					regexpArg.Name():      command.StringValue("T(.*)T"),
-					replacementArg.Name(): command.StringValue("T${1}T${1}T"),
-					fileArg.Name():        command.StringListValue(td("one.txt"), td("two.txt"), td("three.txt")),
+				WantData: &command.Data{Values: map[string]interface{}{
+					regexpArg.Name():      "T(.*)T",
+					replacementArg.Name(): "T${1}T${1}T",
+					fileArg.Name():        []string{td("one.txt"), td("two.txt"), td("three.txt")},
 				}},
 			},
 		},
