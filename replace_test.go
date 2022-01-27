@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -16,8 +15,8 @@ const (
 	testDir = "testing"
 )
 
-func td(fs string) string {
-	return filepath.Join(testDir, fs)
+func td(t *testing.T, fs ...string) string {
+	return command.FilepathAbs(t, append([]string{testDir}, fs...)...)
 }
 
 func TestLoad(t *testing.T) {
@@ -94,7 +93,7 @@ func TestReplace(t *testing.T) {
 				Args: []string{
 					"[a-1]",
 					"ABC",
-					td("one.txt"),
+					td(t, "one.txt"),
 				},
 				WantStderr: []string{
 					"validation failed: [IsRegex] value \"[a-1]\" isn't a valid regex: error parsing regexp: invalid character class range: `a-1`",
@@ -111,23 +110,23 @@ func TestReplace(t *testing.T) {
 				Args: []string{
 					"abc",
 					"ABC",
-					td("one.txt"),
+					td(t, "one.txt"),
 				},
 				WantStderr: []string{
-					fmt.Sprintf(`validation failed: [FileExists] file %q does not exist`, td("one.txt")),
+					fmt.Sprintf(`validation failed: [FileExists] file %q does not exist`, td(t, "one.txt")),
 				},
-				WantErr: fmt.Errorf(`validation failed: [FileExists] file %q does not exist`, td("one.txt")),
+				WantErr: fmt.Errorf(`validation failed: [FileExists] file %q does not exist`, td(t, "one.txt")),
 				WantData: &command.Data{Values: map[string]interface{}{
 					regexpArg.Name():      "abc",
 					replacementArg.Name(): "ABC",
-					fileArg.Name():        []string{td("one.txt")},
+					fileArg.Name():        []string{td(t, "one.txt")},
 				}},
 			},
 		},
 		{
 			name: "makes no replacements",
 			files: map[string][]string{
-				td("one.txt"): {
+				td(t, "one.txt"): {
 					"",
 				},
 			},
@@ -135,24 +134,24 @@ func TestReplace(t *testing.T) {
 				Args: []string{
 					"abc",
 					"ABC",
-					td("one.txt"),
+					td(t, "one.txt"),
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
 					regexpArg.Name():      "abc",
 					replacementArg.Name(): "ABC",
-					fileArg.Name():        []string{td("one.txt")},
+					fileArg.Name():        []string{td(t, "one.txt")},
 				}},
 			},
 		},
 		{
 			name: "makes a replacement",
 			files: map[string][]string{
-				td("one.txt"): {
+				td(t, "one.txt"): {
 					"123 abc DEF",
 				},
 			},
 			wantFiles: map[string][]string{
-				td("one.txt"): {
+				td(t, "one.txt"): {
 					"123 ABC DEF",
 				},
 			},
@@ -160,47 +159,47 @@ func TestReplace(t *testing.T) {
 				Args: []string{
 					"abc",
 					"ABC",
-					td("one.txt"),
+					td(t, "one.txt"),
 				},
 				WantStdout: []string{
-					fmt.Sprintf(`Replacement made in %q:`, td("one.txt")),
+					fmt.Sprintf(`Replacement made in %q:`, td(t, "one.txt")),
 					"  123 abc DEF",
 					"  123 ABC DEF",
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
 					regexpArg.Name():      "abc",
 					replacementArg.Name(): "ABC",
-					fileArg.Name():        []string{td("one.txt")},
+					fileArg.Name():        []string{td(t, "one.txt")},
 				}},
 			},
 		},
 		{
 			name: "makes a replacement in files with matches",
 			files: map[string][]string{
-				td("one.txt"): {
+				td(t, "one.txt"): {
 					"ToT",
 					"Too cool",
 					"prefix text Thank you very much, Tony",
 				},
-				td("two.txt"): {
+				td(t, "two.txt"): {
 					"nothing to see here",
 					"these are not the lines you are looking for",
 				},
-				td("three.txt"): {
+				td(t, "three.txt"): {
 					"  T x T ",
 				},
 			},
 			wantFiles: map[string][]string{
-				td("one.txt"): {
+				td(t, "one.txt"): {
 					"ToToT",
 					"Too cool",
 					"prefix text Thank you very much, Thank you very much, Tony",
 				},
-				td("two.txt"): {
+				td(t, "two.txt"): {
 					"nothing to see here",
 					"these are not the lines you are looking for",
 				},
-				td("three.txt"): {
+				td(t, "three.txt"): {
 					"  T x T x T ",
 				},
 			},
@@ -208,28 +207,29 @@ func TestReplace(t *testing.T) {
 				Args: []string{
 					"T(.*)T",
 					"T${1}T${1}T",
-					td("one.txt"),
-					td("two.txt"),
-					td("three.txt"),
+					td(t, "one.txt"),
+					td(t, "two.txt"),
+					td(t, "three.txt"),
 				},
 				WantStdout: []string{
-					fmt.Sprintf(`Replacement made in %q:`, td("one.txt")),
+					fmt.Sprintf(`Replacement made in %q:`, td(t, "one.txt")),
 					"  ToT",
 					"  ToToT",
-					fmt.Sprintf(`Replacement made in %q:`, td("one.txt")),
+					fmt.Sprintf(`Replacement made in %q:`, td(t, "one.txt")),
 					"  prefix text Thank you very much, Tony",
 					"  prefix text Thank you very much, Thank you very much, Tony",
-					fmt.Sprintf(`Replacement made in %q:`, td("three.txt")),
+					fmt.Sprintf(`Replacement made in %q:`, td(t, "three.txt")),
 					"    T x T ",
 					"    T x T x T ",
 				},
 				WantData: &command.Data{Values: map[string]interface{}{
 					regexpArg.Name():      "T(.*)T",
 					replacementArg.Name(): "T${1}T${1}T",
-					fileArg.Name():        []string{td("one.txt"), td("two.txt"), td("three.txt")},
+					fileArg.Name():        []string{td(t, "one.txt"), td(t, "two.txt"), td(t, "three.txt")},
 				}},
 			},
 		},
+		/* Useful for commenting out tests. */
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			if err := os.Mkdir(testDir, 0644); err != nil {
@@ -286,7 +286,7 @@ func TestUsage(t *testing.T) {
 			"REGEXP REPLACEMENT FILE [ FILE ... ]",
 			"",
 			"Arguments:",
-			"  FILE: File in which replacements should be made",
+			"  FILE: File(s) in which replacements should be made",
 			"  REGEXP: Expression to replace",
 			"  REPLACEMENT: Replacement pattern",
 		},

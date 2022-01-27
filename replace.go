@@ -13,7 +13,7 @@ import (
 var (
 	regexpArg      = command.Arg[string]("REGEXP", "Expression to replace", command.IsRegex())
 	replacementArg = command.Arg[string]("REPLACEMENT", "Replacement pattern")
-	fileArg        = command.ListArg[string]("FILE", "File in which replacements should be made", 1, command.UnboundedList, command.ValidatorList(command.FileExists()))
+	fileArg        = command.FileListNode("FILE", "File(s) in which replacements should be made", 1, command.UnboundedList, command.ValidatorList(command.FileExists()))
 )
 
 func CLI() *Replace {
