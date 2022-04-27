@@ -19,32 +19,6 @@ func td(t *testing.T, fs ...string) string {
 	return command.FilepathAbs(t, append([]string{testDir}, fs...)...)
 }
 
-func TestLoad(t *testing.T) {
-	for _, test := range []struct {
-		name string
-		json string
-	}{
-		{
-			name: "handles empty string",
-		},
-		{
-			name: "handles invalid json",
-			json: "}}",
-		},
-		{
-			name: "handles valid json",
-			json: `{"Field": "Value"}`,
-		},
-	} {
-		t.Run(test.name, func(t *testing.T) {
-			r := &Replace{}
-			if err := r.Load(test.json); err != nil {
-				t.Fatalf("Load(%v) should return nil; got %v", test.json, err)
-			}
-		})
-	}
-}
-
 func TestReplace(t *testing.T) {
 	for _, test := range []struct {
 		name      string
