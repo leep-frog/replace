@@ -1,10 +1,12 @@
 package main
 
 import (
+	"os"
+
 	"github.com/leep-frog/command/sourcerer"
 	"github.com/leep-frog/replace"
 )
 
 func main() {
-	sourcerer.Source(replace.CLI())
+	os.Exit(sourcerer.Source(replace.CLI()))
 }
