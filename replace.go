@@ -14,6 +14,7 @@ var (
 	regexpArg      = command.Arg[string]("REGEXP", "Expression to replace", command.IsRegex())
 	replacementArg = command.Arg[string]("REPLACEMENT", "Replacement pattern")
 	fileArg        = command.FileListNode("FILE", "File(s) in which replacements should be made", 1, command.UnboundedList, command.ValidatorList(command.FileExists()))
+	wholeFile      = command.BoolFlag("whole-file", 'w', "Whether or not to replace multi-line regexes")
 )
 
 func CLI() *Replace {
@@ -43,9 +44,9 @@ func (r *Replace) replace(output command.Output, rx *regexp.Regexp, rp, filename
 	for i, line := range lines {
 		lines[i] = rx.ReplaceAllString(line, rp)
 		if line != lines[i] {
-			output.Stdoutf("Replacement made in %q:", filename)
-			output.Stdout("  " + line)
-			output.Stdout("  " + lines[i])
+			output.Stdoutf("Replacement made in %q:\n", filename)
+			output.Stdoutf("  %s\n", line)
+			output.Stdoutf("  %s\n", lines[i])
 		}
 	}
 
@@ -75,6 +76,7 @@ func (r *Replace) Replace(output command.Output, data *command.Data) error {
 func (r *Replace) Node() *command.Node {
 	return command.SerialNodes(
 		command.Description("Makes regex replacements in files"),
+		command.NewFlagNode(wholeFile),
 		regexpArg,
 		replacementArg,
 		fileArg,

@@ -29,7 +29,7 @@ func TestReplace(t *testing.T) {
 		{
 			name: "requires regexp",
 			etc: &command.ExecuteTestCase{
-				WantStderr: []string{`Argument "REGEXP" requires at least 1 argument, got 0`},
+				WantStderr: "Argument \"REGEXP\" requires at least 1 argument, got 0\n",
 				WantErr:    fmt.Errorf(`Argument "REGEXP" requires at least 1 argument, got 0`),
 			},
 		},
@@ -39,7 +39,7 @@ func TestReplace(t *testing.T) {
 				Args: []string{
 					"abc",
 				},
-				WantStderr: []string{`Argument "REPLACEMENT" requires at least 1 argument, got 0`},
+				WantStderr: "Argument \"REPLACEMENT\" requires at least 1 argument, got 0\n",
 				WantErr:    fmt.Errorf(`Argument "REPLACEMENT" requires at least 1 argument, got 0`),
 				WantData: &command.Data{Values: map[string]interface{}{
 					regexpArg.Name(): "abc",
@@ -53,7 +53,7 @@ func TestReplace(t *testing.T) {
 					"abc",
 					"ABC",
 				},
-				WantStderr: []string{`Argument "FILE" requires at least 1 argument, got 0`},
+				WantStderr: "Argument \"FILE\" requires at least 1 argument, got 0\n",
 				WantErr:    fmt.Errorf(`Argument "FILE" requires at least 1 argument, got 0`),
 				WantData: &command.Data{Values: map[string]interface{}{
 					regexpArg.Name():      "abc",
@@ -69,10 +69,8 @@ func TestReplace(t *testing.T) {
 					"ABC",
 					td(t, "one.txt"),
 				},
-				WantStderr: []string{
-					"validation failed: [IsRegex] value \"[a-1]\" isn't a valid regex: error parsing regexp: invalid character class range: `a-1`",
-				},
-				WantErr: fmt.Errorf("validation failed: [IsRegex] value \"[a-1]\" isn't a valid regex: error parsing regexp: invalid character class range: `a-1`"),
+				WantStderr: "validation for \"REGEXP\" failed: [IsRegex] value \"[a-1]\" isn't a valid regex: error parsing regexp: invalid character class range: `a-1`\n",
+				WantErr:    fmt.Errorf("validation for \"REGEXP\" failed: [IsRegex] value \"[a-1]\" isn't a valid regex: error parsing regexp: invalid character class range: `a-1`"),
 				WantData: &command.Data{Values: map[string]interface{}{
 					regexpArg.Name(): "[a-1]",
 				}},
@@ -86,10 +84,8 @@ func TestReplace(t *testing.T) {
 					"ABC",
 					td(t, "one.txt"),
 				},
-				WantStderr: []string{
-					fmt.Sprintf(`validation failed: [FileExists] file %q does not exist`, td(t, "one.txt")),
-				},
-				WantErr: fmt.Errorf(`validation failed: [FileExists] file %q does not exist`, td(t, "one.txt")),
+				WantStderr: fmt.Sprintf("validation for \"FILE\" failed: [FileExists] file %q does not exist\n", td(t, "one.txt")),
+				WantErr:    fmt.Errorf(`validation for "FILE" failed: [FileExists] file %q does not exist`, td(t, "one.txt")),
 				WantData: &command.Data{Values: map[string]interface{}{
 					regexpArg.Name():      "abc",
 					replacementArg.Name(): "ABC",
@@ -135,11 +131,12 @@ func TestReplace(t *testing.T) {
 					"ABC",
 					td(t, "one.txt"),
 				},
-				WantStdout: []string{
+				WantStdout: strings.Join([]string{
 					fmt.Sprintf(`Replacement made in %q:`, td(t, "one.txt")),
 					"  123 abc DEF",
 					"  123 ABC DEF",
-				},
+					"",
+				}, "\n"),
 				WantData: &command.Data{Values: map[string]interface{}{
 					regexpArg.Name():      "abc",
 					replacementArg.Name(): "ABC",
@@ -185,7 +182,7 @@ func TestReplace(t *testing.T) {
 					td(t, "two.txt"),
 					td(t, "three.txt"),
 				},
-				WantStdout: []string{
+				WantStdout: strings.Join([]string{
 					fmt.Sprintf(`Replacement made in %q:`, td(t, "one.txt")),
 					"  ToT",
 					"  ToToT",
@@ -195,7 +192,8 @@ func TestReplace(t *testing.T) {
 					fmt.Sprintf(`Replacement made in %q:`, td(t, "three.txt")),
 					"    T x T ",
 					"    T x T x T ",
-				},
+					"",
+				}, "\n"),
 				WantData: &command.Data{Values: map[string]interface{}{
 					regexpArg.Name():      "T(.*)T",
 					replacementArg.Name(): "T${1}T${1}T",
@@ -257,12 +255,15 @@ func TestUsage(t *testing.T) {
 		Node: CLI().Node(),
 		WantString: []string{
 			"Makes regex replacements in files",
-			"REGEXP REPLACEMENT FILE [ FILE ... ]",
+			"REGEXP REPLACEMENT FILE [ FILE ... ] --whole-file|-w",
 			"",
 			"Arguments:",
 			"  FILE: File(s) in which replacements should be made",
 			"  REGEXP: Expression to replace",
 			"  REPLACEMENT: Replacement pattern",
+			"",
+			"Flags:",
+			"  [w] whole-file: Whether or not to replace multi-line regexes",
 		},
 	})
 }
