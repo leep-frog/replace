@@ -76,10 +76,10 @@ func (r *Replace) Replace(output command.Output, data *command.Data) error {
 func (r *Replace) Node() *command.Node {
 	return command.SerialNodes(
 		command.Description("Makes regex replacements in files"),
-		command.NewFlagNode(wholeFile),
+		command.FlagNode(wholeFile),
 		regexpArg,
 		replacementArg,
 		fileArg,
-		command.ExecuteErrNode(r.Replace),
+		&command.ExecutorProcessor{F: r.Replace},
 	)
 }
