@@ -73,7 +73,7 @@ func (r *Replace) Replace(output command.Output, data *command.Data) error {
 	return err
 }
 
-func (r *Replace) Node() *command.Node {
+func (r *Replace) Node() command.Node {
 	return command.SerialNodes(
 		command.Description("Makes regex replacements in files"),
 		command.FlagNode(wholeFile),
