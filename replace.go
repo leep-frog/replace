@@ -76,7 +76,7 @@ func (r *Replace) Replace(output command.Output, data *command.Data) error {
 func (r *Replace) Node() command.Node {
 	return command.SerialNodes(
 		command.Description("Makes regex replacements in files"),
-		command.FlagNode(wholeFile),
+		command.FlagProcessor(wholeFile),
 		regexpArg,
 		replacementArg,
 		fileArg,
