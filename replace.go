@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/leep-frog/command"
-	"github.com/leep-frog/command/sourcerer"
 )
 
 var (
@@ -27,9 +26,6 @@ type Replace struct{}
 func (*Replace) Changed() bool   { return false }
 func (*Replace) Setup() []string { return nil }
 func (*Replace) Name() string {
-	if sourcerer.CurrentOS.Name() == "windows" {
-		return "wr"
-	}
 	return "r"
 }
 
