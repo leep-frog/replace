@@ -8,7 +8,9 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/leep-frog/command"
+	"github.com/leep-frog/command/command"
+	"github.com/leep-frog/command/commandertest"
+	"github.com/leep-frog/command/commandtest"
 )
 
 const (
@@ -16,26 +18,26 @@ const (
 )
 
 func td(t *testing.T, fs ...string) string {
-	return command.FilepathAbs(t, append([]string{testDir}, fs...)...)
+	return commandtest.FilepathAbs(t, append([]string{testDir}, fs...)...)
 }
 
 func TestReplace(t *testing.T) {
 	for _, test := range []struct {
 		name      string
-		etc       *command.ExecuteTestCase
+		etc       *commandtest.ExecuteTestCase
 		files     map[string][]string
 		wantFiles map[string][]string
 	}{
 		{
 			name: "requires regexp",
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				WantStderr: "Argument \"REGEXP\" requires at least 1 argument, got 0\n",
 				WantErr:    fmt.Errorf(`Argument "REGEXP" requires at least 1 argument, got 0`),
 			},
 		},
 		{
 			name: "requires replacement",
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args: []string{
 					"abc",
 				},
@@ -48,7 +50,7 @@ func TestReplace(t *testing.T) {
 		},
 		{
 			name: "requires at least one file",
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args: []string{
 					"abc",
 					"ABC",
@@ -63,7 +65,7 @@ func TestReplace(t *testing.T) {
 		},
 		{
 			name: "requires valid regex",
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args: []string{
 					"[a-1]",
 					"ABC",
@@ -78,7 +80,7 @@ func TestReplace(t *testing.T) {
 		},
 		{
 			name: "fails if file does not exist",
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args: []string{
 					"abc",
 					"ABC",
@@ -100,7 +102,7 @@ func TestReplace(t *testing.T) {
 					"",
 				},
 			},
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args: []string{
 					"abc",
 					"ABC",
@@ -125,7 +127,7 @@ func TestReplace(t *testing.T) {
 					"123 ABC DEF",
 				},
 			},
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args: []string{
 					"abc",
 					"ABC",
@@ -174,7 +176,7 @@ func TestReplace(t *testing.T) {
 					"  T x T x T ",
 				},
 			},
-			etc: &command.ExecuteTestCase{
+			etc: &commandtest.ExecuteTestCase{
 				Args: []string{
 					"T(.*)T",
 					"T${1}T${1}T",
@@ -218,8 +220,8 @@ func TestReplace(t *testing.T) {
 
 			r := &Replace{}
 			test.etc.Node = r.Node()
-			command.ExecuteTest(t, test.etc)
-			command.ChangeTest(t, nil, r)
+			commandertest.ExecuteTest(t, test.etc)
+			commandertest.ChangeTest(t, nil, r)
 
 			for f, originalContents := range test.files {
 				wantContents, ok := test.wantFiles[f]
@@ -251,9 +253,10 @@ func TestMetadata(t *testing.T) {
 }
 
 func TestUsage(t *testing.T) {
-	command.UsageTest(t, &command.UsageTestCase{
+	commandertest.ExecuteTest(t, &commandtest.ExecuteTestCase{
 		Node: CLI().Node(),
-		WantString: []string{
+		Args: []string{"--help"},
+		WantStdout: strings.Join([]string{
 			"Makes regex replacements in files",
 			"REGEXP REPLACEMENT FILE [ FILE ... ] --whole-file|-w",
 			"",
@@ -266,6 +269,7 @@ func TestUsage(t *testing.T) {
 			"",
 			"Flags:",
 			"  [w] whole-file: Whether or not to replace multi-line regexes",
-		},
+			"",
+		}, "\n"),
 	})
 }

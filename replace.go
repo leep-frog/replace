@@ -7,14 +7,15 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/leep-frog/command"
+	"github.com/leep-frog/command/command"
+	"github.com/leep-frog/command/commander"
 )
 
 var (
-	regexpArg      = command.Arg[string]("REGEXP", "Expression to replace", command.IsRegex())
-	replacementArg = command.Arg[string]("REPLACEMENT", "Replacement pattern")
-	fileArg        = command.FileListArgument("FILE", "File(s) in which replacements should be made", 1, command.UnboundedList, command.ValidatorList(command.FileExists()))
-	wholeFile      = command.BoolFlag("whole-file", 'w', "Whether or not to replace multi-line regexes")
+	regexpArg      = commander.Arg[string]("REGEXP", "Expression to replace", commander.IsRegex())
+	replacementArg = commander.Arg[string]("REPLACEMENT", "Replacement pattern")
+	fileArg        = commander.FileListArgument("FILE", "File(s) in which replacements should be made", 1, command.UnboundedList, commander.ListifyValidatorOption(commander.FileExists()))
+	wholeFile      = commander.BoolFlag("whole-file", 'w', "Whether or not to replace multi-line regexes")
 )
 
 func CLI() *Replace {
@@ -59,7 +60,7 @@ func (r *Replace) replace(output command.Output, rx *regexp.Regexp, rp, filename
 }
 
 func (r *Replace) Replace(output command.Output, data *command.Data) error {
-	rx := data.Regexp(regexpArg.Name())
+	rx := regexp.MustCompile(regexpArg.Get(data))
 	rp := data.String(replacementArg.Name())
 	filenames := data.StringList(fileArg.Name())
 
@@ -74,12 +75,12 @@ func (r *Replace) Replace(output command.Output, data *command.Data) error {
 }
 
 func (r *Replace) Node() command.Node {
-	return command.SerialNodes(
-		command.Description("Makes regex replacements in files"),
-		command.FlagProcessor(wholeFile),
+	return commander.SerialNodes(
+		commander.Description("Makes regex replacements in files"),
+		commander.FlagProcessor(wholeFile),
 		regexpArg,
 		replacementArg,
 		fileArg,
-		&command.ExecutorProcessor{F: r.Replace},
+		&commander.ExecutorProcessor{F: r.Replace},
 	)
 }
