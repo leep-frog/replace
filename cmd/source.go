@@ -8,5 +8,5 @@ import (
 )
 
 func main() {
-	os.Exit(sourcerer.Source([]sourcerer.CLI{replace.CLI()}))
+	os.Exit(sourcerer.Source("replaceCLI", []sourcerer.CLI{replace.CLI()}))
 }
